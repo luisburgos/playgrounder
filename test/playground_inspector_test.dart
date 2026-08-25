@@ -26,7 +26,6 @@ void main() {
           active: _presets.first,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: const [],
         ),
       );
 
@@ -45,7 +44,6 @@ void main() {
           active: _presets.first,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: const [],
         ),
       );
 
@@ -65,7 +63,6 @@ void main() {
           active: null,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: const [],
         ),
       );
 
@@ -88,7 +85,6 @@ void main() {
             active: null,
             onSelected: (_) {},
             knobs: const Text('the knobs'),
-            actions: const [],
           ),
         );
 
@@ -120,7 +116,6 @@ void main() {
           active: _presets.first,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: const [],
         ),
       );
       expect(borderOf(tester), isNotNull);
@@ -132,14 +127,13 @@ void main() {
           active: _presets.first,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: const [],
           bordered: false,
         ),
       );
       expect(borderOf(tester), isNull);
     });
 
-    testWidgets('renders pinned actions when given', (tester) async {
+    testWidgets('renders pinned actions through the footer', (tester) async {
       await _pump(
         tester,
         PlaygroundInspector<int>(
@@ -147,14 +141,16 @@ void main() {
           active: _presets.first,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+          footer: PlaygroundActions(
+            actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+          ),
         ),
       );
 
       expect(find.text('Copy'), findsOneWidget);
     });
 
-    testWidgets('renders pinned actions in the unbordered layout', (
+    testWidgets('renders footer actions in the unbordered layout', (
       tester,
     ) async {
       await _pump(
@@ -164,12 +160,82 @@ void main() {
           active: _presets.first,
           onSelected: (_) {},
           knobs: const Text('the knobs'),
-          actions: [PlaygroundAction(label: 'Reset', onPressed: () {})],
+          footer: PlaygroundActions(
+            actions: [PlaygroundAction(label: 'Reset', onPressed: () {})],
+          ),
           bordered: false,
         ),
       );
 
       expect(find.text('Reset'), findsOneWidget);
+    });
+
+    testWidgets('renders the footer when given', (tester) async {
+      await _pump(
+        tester,
+        PlaygroundInspector<int>(
+          presets: _presets,
+          active: _presets.first,
+          onSelected: (_) {},
+          knobs: const Text('the knobs'),
+          footer: const Text('the footer'),
+        ),
+      );
+
+      expect(find.text('the footer'), findsOneWidget);
+    });
+
+    testWidgets('renders the footer in the unbordered layout', (tester) async {
+      await _pump(
+        tester,
+        PlaygroundInspector<int>(
+          presets: _presets,
+          active: _presets.first,
+          onSelected: (_) {},
+          knobs: const Text('the knobs'),
+          footer: const Text('the footer'),
+          bordered: false,
+        ),
+      );
+
+      expect(find.text('the footer'), findsOneWidget);
+    });
+
+    testWidgets('composes actions with other footer content', (tester) async {
+      await _pump(
+        tester,
+        PlaygroundInspector<int>(
+          presets: _presets,
+          active: _presets.first,
+          onSelected: (_) {},
+          knobs: const Text('the knobs'),
+          footer: Column(
+            children: [
+              PlaygroundActions(
+                actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+              ),
+              const Text('the footer'),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.text('the footer'), findsOneWidget);
+    });
+
+    testWidgets('renders no footer when null', (tester) async {
+      await _pump(
+        tester,
+        PlaygroundInspector<int>(
+          presets: _presets,
+          active: _presets.first,
+          onSelected: (_) {},
+          knobs: const Text('the knobs'),
+        ),
+      );
+
+      expect(find.text('the footer'), findsNothing);
     });
   });
 }

@@ -31,7 +31,7 @@ Or add it to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  playgrounder: ^0.1.0
+  playgrounder: ^0.2.0
 ```
 
 ## Usage 🚀

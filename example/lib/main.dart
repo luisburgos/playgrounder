@@ -60,13 +60,15 @@ class _CardPlaygroundState extends State<_CardPlayground> {
           summary: 'Tight rows, no image.',
         ),
       ],
-      actions: [
-        PlaygroundAction(
-          label: 'Copy config',
-          icon: const Icon(Icons.copy),
-          onPressed: () => _copyConfig(context),
-        ),
-      ],
+      footer: PlaygroundActions(
+        actions: [
+          PlaygroundAction(
+            label: 'Copy config',
+            icon: const Icon(Icons.copy),
+            onPressed: () => _copyConfig(context),
+          ),
+        ],
+      ),
       previewMaxWidth: 320,
       previewBuilder: (context, config) => _Card(config: config),
       knobsBuilder: (context, config, onChanged) => KnobGroup(

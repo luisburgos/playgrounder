@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/inspector/playground_inspector.dart';
-import 'package:playgrounder/src/playground/playground_action.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
 import 'package:playgrounder/src/playground/preview/playground_preview.dart';
 
@@ -17,9 +16,9 @@ const _defaultInspectorWidth = 300.0;
 /// A component rendered live beside the controls that configure it.
 ///
 /// Two peers: a preview showing the subject, and an inspector holding presets,
-/// knobs and actions. The playground owns the current configuration so it can
-/// tell whether the knobs still match a preset, which is what a fixed set of
-/// examples cannot show.
+/// knobs and a pinned footer. The playground owns the current configuration so
+/// it can tell whether the knobs still match a preset, which is what a fixed
+/// set of examples cannot show.
 ///
 /// [T] is the caller's configuration type. Give it value equality — the
 /// preset-versus-Custom check is `==` against each preset's config, so a type
@@ -49,7 +48,7 @@ class Playground<T> extends StatelessWidget {
     required this.previewBuilder,
     required this.knobsBuilder,
     this.presets = const [],
-    this.actions = const [],
+    this.footer,
     this.previewMaxWidth,
     this.previewBackground,
     this.inspectorWidth = _defaultInspectorWidth,
@@ -77,8 +76,13 @@ class Playground<T> extends StatelessWidget {
   /// Named starting configurations. Empty hides the Presets tab.
   final List<PlaygroundPreset<T>> presets;
 
-  /// Actions on the current configuration, pinned to the inspector's bottom.
-  final List<PlaygroundAction> actions;
+  /// Arbitrary content pinned to the bottom of the inspector, persisting
+  /// across the Presets and Custom tabs.
+  ///
+  /// The region supplies the divider and inset; the content is yours — a row
+  /// of swatches, a status line, or the prefab `PlaygroundActions` column of
+  /// styled action buttons. Compose freely when the footer holds several.
+  final Widget? footer;
 
   /// Clamps the previewed subject's width to what it really renders at.
   final double? previewMaxWidth;
@@ -123,7 +127,7 @@ class Playground<T> extends StatelessWidget {
     knobs: Builder(
       builder: (context) => knobsBuilder(context, config, onChanged),
     ),
-    actions: actions,
+    footer: footer,
     bordered: bordered,
   );
 
