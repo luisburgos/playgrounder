@@ -13,14 +13,14 @@ Future<void> _pumpAt(
   double width, {
   int config = 0,
   ValueChanged<int>? onChanged,
-  List<PlaygroundAction> actions = const [],
+  Widget? footer,
   PlaygroundStyle? style,
 }) {
   Widget playground = Playground<int>(
     config: config,
     onChanged: onChanged ?? (_) {},
     presets: _presets,
-    actions: actions,
+    footer: footer,
     previewBuilder: (context, c) => Text('preview $c'),
     knobsBuilder: (context, c, onChanged) => TextButton(
       onPressed: () => onChanged(c + 1),
@@ -202,7 +202,9 @@ void main() {
       await _pumpAt(
         tester,
         1000,
-        actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+        footer: PlaygroundActions(
+          actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+        ),
       );
 
       expect(find.text('Copy'), findsOneWidget);
@@ -213,11 +215,42 @@ void main() {
       await _pumpAt(
         tester,
         1000,
-        actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+        footer: PlaygroundActions(
+          actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+        ),
         style: const _RedActionStyle(),
       );
 
       expect(find.text('styled Copy'), findsOneWidget);
+    });
+  });
+
+  group('Playground footer', () {
+    testWidgets('renders the footer widget pinned in the inspector', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox.expand(
+              child: Playground<int>(
+                config: 0,
+                onChanged: (_) {},
+                presets: _presets,
+                footer: const Text('footer content'),
+                previewBuilder: (context, c) => Text('preview $c'),
+                knobsBuilder: (context, c, onChanged) => const Text('knobs'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('footer content'), findsOneWidget);
     });
   });
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:playgrounder/playgrounder.dart';
-import 'package:playgrounder/src/playground/inspector/playground_actions.dart';
 
 Future<void> _pump(WidgetTester tester, Widget child) {
   return tester.pumpWidget(
@@ -11,9 +10,7 @@ Future<void> _pump(WidgetTester tester, Widget child) {
 
 void main() {
   group('PlaygroundActions', () {
-    testWidgets('renders one button per action behind a divider', (
-      tester,
-    ) async {
+    testWidgets('renders one styled button per action', (tester) async {
       await _pump(
         tester,
         PlaygroundActions(
@@ -26,7 +23,6 @@ void main() {
 
       expect(find.text('Copy'), findsOneWidget);
       expect(find.text('Reset'), findsOneWidget);
-      expect(find.byType(Divider), findsOneWidget);
     });
 
     testWidgets('fires an action callback', (tester) async {
@@ -42,6 +38,19 @@ void main() {
 
       await tester.tap(find.text('Copy'));
       expect(pressed, isTrue);
+    });
+
+    testWidgets('is content only: no divider of its own', (tester) async {
+      // The footer region supplies the divider and inset; composing this
+      // widget must not double the chrome.
+      await _pump(
+        tester,
+        PlaygroundActions(
+          actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
+        ),
+      );
+
+      expect(find.byType(Divider), findsNothing);
     });
   });
 }

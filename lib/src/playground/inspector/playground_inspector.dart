@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
-import 'package:playgrounder/src/playground/inspector/playground_actions.dart';
+import 'package:playgrounder/src/playground/inspector/playground_footer.dart';
 import 'package:playgrounder/src/playground/inspector/playground_presets.dart';
-import 'package:playgrounder/src/playground/playground_action.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
 import 'package:playgrounder/src/style/playground_style.dart';
 
@@ -21,7 +20,7 @@ class PlaygroundInspector<T> extends StatefulWidget {
     required this.active,
     required this.onSelected,
     required this.knobs,
-    required this.actions,
+    this.footer,
     this.bordered = true,
     super.key,
   });
@@ -38,8 +37,8 @@ class PlaygroundInspector<T> extends StatefulWidget {
   /// The caller's controls for the current configuration.
   final Widget knobs;
 
-  /// Actions on the configuration, pinned to the bottom.
-  final List<PlaygroundAction> actions;
+  /// Arbitrary content pinned to the bottom, or null for none.
+  final Widget? footer;
 
   /// Whether to draw the hairline on the leading edge.
   ///
@@ -115,8 +114,8 @@ class _PlaygroundInspectorState<T> extends State<PlaygroundInspector<T>>
 
   @override
   Widget build(BuildContext context) {
-    // Only the controls scroll; the actions are pinned to the bottom by the
-    // Expanded above them, so they stay reachable however long the control
+    // Only the controls scroll; the footer is pinned to the bottom by the
+    // Expanded above it, so it stays reachable however long the control
     // list grows. Unbounded height means there is no bottom to pin to, so the
     // stacked layout lets both size themselves instead.
     final content = widget.bordered
@@ -125,16 +124,16 @@ class _PlaygroundInspectorState<T> extends State<PlaygroundInspector<T>>
               Expanded(
                 child: SingleChildScrollView(child: _buildControls(context)),
               ),
-              if (widget.actions.isNotEmpty)
-                PlaygroundActions(actions: widget.actions),
+              if (widget.footer != null)
+                PlaygroundFooter(child: widget.footer!),
             ],
           )
         : Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildControls(context),
-              if (widget.actions.isNotEmpty)
-                PlaygroundActions(actions: widget.actions),
+              if (widget.footer != null)
+                PlaygroundFooter(child: widget.footer!),
             ],
           );
 
