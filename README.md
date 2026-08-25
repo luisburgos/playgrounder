@@ -6,6 +6,10 @@ Build a playground for any component: a live preview beside the knobs that
 configure it, with presets to start from. It uses Material by default, or
 `PlaygroundStyle` to match your own design system.
 
+### 🔎 [**Try the live demo →**](https://luisburgos.github.io/playgrounder/)
+
+The example playground, running in your browser. No install required.
+
 ## Features ✨
 
 - **Live preview beside live controls:** a component rendered live next to the
@@ -106,5 +110,10 @@ Playground<CardConfig>(
 The measurement is of the space the playground is actually given, not the
 window, so it docks and stacks correctly inside a padded or split parent too.
 
-See [`example/`](example) for a runnable playground using the default Material
-chrome.
+See the example playground running at
+**<https://luisburgos.github.io/playgrounder/>**, or run [`example/`](example)
+locally:
+
+```sh
+cd example && fvm flutter run
+```
