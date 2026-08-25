@@ -12,6 +12,11 @@
 # pub cache.
 test/
 
+# The example's web scaffolding exists only to deploy the example to GitHub
+# Pages. pub.dev renders example/lib on the Example tab; the web/ entry point
+# is dead weight in a consumer's pub cache.
+example/web/
+
 # Design and process docs. The package's public story is README.md; the specs
 # under docs/ are for people working IN the repo, not consuming it. (Also keeps
 # pub.dev from warning about the plural "docs" vs its "doc" convention.)

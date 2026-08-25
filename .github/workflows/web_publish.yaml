@@ -1,0 +1,86 @@
+name: publish example
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+on:
+  push:
+    branches:
+      - main
+
+  # Allows a redeploy without an empty commit — useful when a build failed for
+  # a transient reason, or to republish the current main on demand. GitHub only
+  # exposes this once the workflow exists on the default branch, so it cannot
+  # be used to preview the workflow itself before it merges.
+  workflow_dispatch:
+
+# The deployment reads the artifact and mints an id-token for the Pages
+# service; nothing here needs to write back to the repository.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # Mirrors the job of the same name in main.yaml: .fvmrc is the single source
+  # of truth for the SDK version, so the published site is built with the same
+  # Flutter that developers run locally.
+  flutter_version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read .fvmrc
+        id: read
+        run: |
+          version=$(jq -er '.flutter' .fvmrc)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Flutter $version (from .fvmrc)"
+
+  build:
+    needs: flutter_version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: example
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ needs.flutter_version.outputs.version }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # The site is served from a project subpath rather than the domain root,
+      # so the base href has to match the repository name or every asset
+      # request resolves one level too high and 404s.
+      #
+      # Icon tree shaking is disabled because the playground renders Material
+      # icons chosen at runtime, which the shaker cannot see and would
+      # otherwise strip.
+      - name: Build web
+        run: |
+          flutter build web \
+            --release \
+            --base-href /playgrounder/ \
+            --no-tree-shake-icons
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: example/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
