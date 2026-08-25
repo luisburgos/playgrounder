@@ -62,3 +62,7 @@ node_modules/
 
 # Claude Code config is shared; only personal local overrides stay out.
 .claude/settings.local.json
+
+# Design and process docs are local working material, not part of the repo.
+# (Already excluded from the published archive via .pubignore.)
+docs/
