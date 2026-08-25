@@ -1,0 +1,169 @@
+<meta charset="utf-8">
+<title>playgrounder — implementation plan</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5a5a5a; --accent: #2b6cb0;
+    --border: #e2e2e2; --code-bg: #f5f5f5; --rule-bg: #fff8e1; --rule-border: #f0c000;
+    --warn-bg: #fdecea; --warn-border: #e53935; --ok-bg: #e8f5e9; --ok-border: #43a047;
+    --tree-bg: #fafafa; --step: #eef4fb;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--fg); background: var(--bg); line-height: 1.6; margin: 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 2rem; margin: 0 0 0.25rem; }
+  .sub { color: var(--muted); margin: 0 0 2rem; }
+  h2 { font-size: 1.4rem; margin: 2.5rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 1.08rem; margin: 1.5rem 0 0.4rem; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; font-size: 0.85rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.5rem 0.7rem; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .callout { border-radius: 8px; padding: 0.85rem 1.1rem; margin: 1.25rem 0; }
+  .rule { background: var(--rule-bg); border-left: 4px solid var(--rule-border); }
+  .warn { background: var(--warn-bg); border-left: 4px solid var(--warn-border); }
+  .ok { background: var(--ok-bg); border-left: 4px solid var(--ok-border); }
+  .callout p:first-child { margin-top: 0; } .callout p:last-child { margin-bottom: 0; }
+  .step { background: var(--step); border: 1px solid #cfe0f3; border-radius: 8px; padding: 0.4rem 0.9rem; margin: 1.5rem 0 0.5rem; font-weight: 600; }
+  .gate { font-size: 0.9rem; color: #1a4d1a; background: var(--ok-bg); border-radius: 6px; padding: 0.5rem 0.8rem; margin: 0.5rem 0 0; }
+  .gate::before { content: "✓ Gate: "; font-weight: 700; }
+  .muted { color: var(--muted); }
+  ul, ol { padding-left: 1.4rem; } li { margin: 0.25rem 0; }
+  .file-tree { background: var(--tree-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: "SF Mono", Menlo, monospace; font-size: 0.85rem; line-height: 1.7; white-space: pre; overflow-x: auto; }
+</style>
+
+<div class="wrap">
+
+<h1>playgrounder — implementation plan</h1>
+<p class="sub">Build sequence for playgrounder v0.1.0, derived from the design spec. Each step ends in a verifiable gate. Written 2026-08-25.</p>
+
+<h2>Principles</h2>
+<ul>
+<li><strong>Vertical slices, each independently green.</strong> The order is chosen so that after every step, <code>fvm flutter test</code> and <code>fvm flutter analyze</code> pass — never a half-wired tree.</li>
+<li><strong>Tests land with the code they cover, not after.</strong> The package job enforces 100% line coverage, so a step that adds a widget adds its test in the same step or it fails CI.</li>
+<li><strong>Transform, don't invent.</strong> Most widgets are flowin source with three edits: drop the <code>flutter_flowin</code> import, replace flowin tokens with private consts, route chrome through <code>PlaygroundStyle</code>. Keep flowin's doc comments and the reasoning in them.</li>
+<li><strong>Every command through <code>fvm</code>; every commit is <code>--amend</code></strong> onto the single seed commit until first release (matches lowframer history policy).</li>
+</ul>
+
+<div class="callout warn">
+<p><strong>Hard gates, unchanged.</strong> No <code>dart pub publish</code> without separate explicit approval. No push / PR before you validate the running example and say so. File edit and <code>git commit</code> are separate tool calls (lefthook heredoc-parse bug). <code>cd</code> into the target repo in every bash call.</p>
+</div>
+
+<h2>Step 0 — Scaffold the repo from the lowframer template</h2>
+<div class="step">Deliverable: an empty-but-green <code>playgrounder</code> package that mirrors lowframer's infra.</div>
+<ul>
+<li>Create <code>~/Work/Projects/playgrounder</code>, <code>git init</code>, copy from lowframer and re-point names: <code>pubspec.yaml</code> (name <code>playgrounder</code>, add <code>equatable</code>, description, topics), <code>analysis_options.yaml</code> (verbatim — <code>very_good_analysis ^10.2.0</code>, example excluded), <code>.fvmrc</code> (Flutter 3.44.0), <code>.github/workflows/main.yaml</code> (verbatim), <code>.changelogrc.js</code>, <code>package.json</code>, <code>lefthook.yml</code>, <code>.gitignore</code>, <code>LICENSE</code>.</li>
+<li><code>lib/playgrounder.dart</code> barrel exporting nothing yet (placeholder). <code>test/version_drift_test.dart</code> adapted: swap <code>lowframer</code> → <code>playgrounder</code> in the README-snippet regex.</li>
+<li>Stub <code>README.md</code> with the <code>playgrounder: ^0.1.0</code> install snippet (so the drift test passes), <code>CHANGELOG.md</code>, and <code>CLAUDE.md</code> carrying the hard gates + the <code>Playground</code>-determinism-free note (no scribble here, so just the publish/push gates).</li>
+<li>Docs: move this plan and the design spec into <code>playgrounder/docs/specs/</code>.</li>
+</ul>
+<p class="gate"><code>fvm flutter pub get</code> succeeds; <code>fvm flutter analyze</code> clean; <code>fvm flutter test</code> passes (drift test only). Seed commit <code>feat: create the playgrounder package</code>.</p>
+
+<h2>Step 1 — Tokens + relevance + value types (no widgets)</h2>
+<div class="step">Deliverable: the dependency-free leaves everything else imports.</div>
+<ul>
+<li><code>src/_tokens.dart</code> — private consts: <code>gap = 8.0</code>, <code>inset = 24.0</code>, <code>hairline = 1.0</code> (were <code>space200</code>, <code>space600</code>, <code>borders.regular</code>).</li>
+<li><code>src/knobs/knob_relevance.dart</code> — <code>KnobRelevance</code> (flowin's <code>FlowinKnobRelevance</code>, rename only; drop the flowin import — it uses none of it beyond <code>@immutable</code>, keep that via <code>meta</code>/<code>foundation</code>).</li>
+<li><code>src/playground/playground_preset.dart</code> — <code>PlaygroundPreset&lt;T&gt;</code> (Equatable, unchanged shape).</li>
+<li><code>src/playground/playground_action.dart</code> — <code>PlaygroundAction</code> (unchanged shape).</li>
+<li><code>src/knobs/scale_knob.dart</code> — add the new <code>ScaleStep</code> value class here (name + double, value equality). Knob widget itself comes in Step 3.</li>
+<li>Tests: value equality of <code>PlaygroundPreset</code>, <code>PlaygroundAction</code>, <code>ScaleStep</code>; <code>KnobRelevance.when</code>/<code>.always</code> fields.</li>
+</ul>
+<p class="gate">100% coverage on these files; analyze clean.</p>
+
+<h2>Step 2 — PlaygroundStyle + Scope (the seam, Material defaults)</h2>
+<div class="step">Deliverable: the injection point, fully usable with stock Material.</div>
+<ul>
+<li><code>src/style/playground_style.dart</code> — <code>PlaygroundStyle</code> base class with the four members from the spec, each defaulting to Material: <code>buildTabs</code> → <code>TabBar</code>; <code>buildPresetRow</code> / <code>buildActionButton</code> → full-width <code>FilledButton.tonalIcon</code>; <code>stageBackground</code> → <code>surfaceContainerHighest</code>.</li>
+<li>Same file: <code>PlaygroundStyleScope extends InheritedWidget</code>, with <code>static PlaygroundStyle of(BuildContext)</code> returning the ambient style or <code>const PlaygroundStyle()</code>, and <code>updateShouldNotify</code>.</li>
+<li>Tests: <code>of</code> returns the default with no scope in the tree; returns the injected style when wrapped; a subclass overriding one member keeps the base defaults for the rest.</li>
+</ul>
+<p class="gate">A pumped <code>PlaygroundStyleScope</code> resolves correctly both ways; 100% coverage.</p>
+
+<h2>Step 3 — Knob widgets</h2>
+<div class="step">Deliverable: the three knobs + group, all raw-Material, all covered.</div>
+<ul>
+<li><code>src/knobs/step_knob.dart</code> — <code>StepKnob&lt;T&gt;</code> (flowin's, already generic; drop flowin import, use <code>Theme.of</code>/<code>textTheme</code> directly instead of <code>context.textTheme</code> sugar).</li>
+<li><code>src/knobs/switch_knob.dart</code> — <code>SwitchKnob</code> (from <code>FlowinPlaygroundSwitchKnob</code>; <code>FlowinDesignSpace.space200</code> → <code>gap</code>).</li>
+<li><code>src/knobs/knob_group.dart</code> — <code>KnobGroup</code> (from <code>FlowinPlaygroundKnobGroup</code>; caps heading, relevance-hide).</li>
+<li><code>src/knobs/scale_knob.dart</code> — <code>ScaleKnob</code> = thin wrapper over <code>StepKnob&lt;ScaleStep&gt;</code> with baked <code>'name — Npx'</code> <code>labelOf</code>. (Replaces flowin's spacing knob; no theme resolution inside — the consumer passes resolved steps.)</li>
+<li>Tests: step-knob slider maps index↔value and snaps (<code>divisions == values.length - 1</code>); switch toggles; group + knob hide to <code>SizedBox.shrink</code> when irrelevant; scale-knob readout string.</li>
+</ul>
+<p class="gate">Every knob renders and drives its callback; irrelevant paths covered; 100%.</p>
+
+<h2>Step 4 — Private inspector internals</h2>
+<div class="step">Deliverable: preview stage, preset list, actions region, inspector — all private, all routing chrome through the style.</div>
+<ul>
+<li><code>src/playground/preview/playground_preview.dart</code> — the stage. Background = <code>style.stageBackground(context)</code> unless a per-call <code>background</code> is passed. (flowin's <code>outlineVariant</code> literal is gone; it becomes flowin's <em>override</em> later.)</li>
+<li><code>src/playground/inspector/playground_presets.dart</code> — preset list. Each row = <code>style.buildPresetRow(...)</code> instead of <code>FlowinItemButton.tonal</code>. The active-check + "Custom" caption stay.</li>
+<li><code>src/playground/inspector/playground_actions.dart</code> — pinned region. Each action = <code>style.buildActionButton(...)</code>; the divider uses <code>hairline</code>.</li>
+<li><code>src/playground/inspector/playground_inspector.dart</code> — docked region. Tab row = <code>style.buildTabs(...)</code>. <strong>Keep the initState-not-late-final TabController fix.</strong> Panels swapped (not TabBarView), presetless path падding-only.</li>
+<li>Tests: preview honors per-call background over style; presets render N rows + drift-to-Custom caption; actions pin and fire; inspector's presetless branch builds without a dispose-time ticker crash (the regression flowin never wrote).</li>
+</ul>
+<p class="gate">Inspector + subparts covered including the empty-presets branch; analyze clean; 100%.</p>
+
+<h2>Step 5 — Playground (the public composition) + barrel</h2>
+<div class="step">Deliverable: <code>Playground&lt;T&gt;</code> wiring it together; the package's public API is complete.</div>
+<ul>
+<li><code>src/playground/playground.dart</code> — <code>Playground&lt;T&gt;</code>: <code>LayoutBuilder</code> split at 900px (stacked <code>ListView</code> + <code>Divider</code> below, docked 300px <code>Row</code> above), <code>_activePreset</code> by <code>==</code>, delegates preview/inspector building. Reads <code>PlaygroundStyle.of(context)</code>.</li>
+<li><code>lib/playgrounder.dart</code> — export all 13 public symbols.</li>
+<li>Tests: breakpoint stack-vs-dock (pump at 800 and 1000 wide, assert layout); active-preset resolves and drifts to Custom on knob change; default-style vs injected-style buttons appear; end-to-end config round-trip through a knob.</li>
+</ul>
+<p class="gate">Full public surface exercised; 100% line coverage on <code>lib/</code>; analyze clean. Amend seed commit.</p>
+
+<h2>Step 6 — playgrounder's own example (single Material playground)</h2>
+<div class="step">Deliverable: <code>example/</code> — one bare playground on the zero-config Material path.</div>
+<ul>
+<li><code>example/</code> as a separate package (own <code>pubspec.yaml</code> with a path dep on <code>playgrounder</code> and nothing else, own <code>analysis_options.yaml</code>), mirroring lowframer's example setup. <strong>No flutter_flowin dependency.</strong></li>
+<li><code>example/lib/main.dart</code> — a single <code>Playground</code> filling the screen, no scope, no app shell or tabs. Framing chrome (tabs, nav) belongs to a consumer's app, not to the playground affordance, so the example is nothing but the preview and inspector.</li>
+<li>Subject: a small card config exercising two switch knobs + a scale knob under a <code>KnobGroup</code>, two presets, one "copy config" action.</li>
+<li>The <code>PlaygroundStyle</code> injection path is documented in the README and proven live by the lowframer example (Step 7); it is not shown in playgrounder's own example.</li>
+</ul>
+<p class="gate">Example is <strong>analyze-only</strong> in CI (no example tests, matching lowframer). Locally: run it, visually confirm the single playground. <em>Stop here and hand a screenshot to the user for review.</em></p>
+
+<h2>Step 7 — Wire the lowframer example against playgrounder (path dep)</h2>
+<div class="step">Deliverable: the actual motivation — a live preview + knobs inside the lowframer example.</div>
+<ul>
+<li>In <code>~/Work/Projects/lowframer/example/pubspec.yaml</code>, add a <strong>path</strong> dep on <code>../../playgrounder</code>.</li>
+<li>Add a playground page to the lowframer example that previews one of its arts (e.g. the Buttons or Dashboard art) with a couple of knobs, using the <strong>default Material style</strong> (no scope). This is the zero-config proof.</li>
+<li>This touches the lowframer repo — a separate change on its own branch there, committed locally, <strong>not pushed</strong>, reported as such.</li>
+</ul>
+<p class="gate">lowframer example runs with the embedded playground; user validates visually. Both repos' changes committed locally, nothing pushed.</p>
+
+<h2>What is NOT in this plan (deferred, per spec)</h2>
+<table>
+<tr><th>Excluded</th><th>Why</th></tr>
+<tr><td>Gallery/showcase shell</td><td>Belongs to flutter_flowin; not a playgrounder concern.</td></tr>
+<tr><td>Migrating flowin's real showcase pages to consume playgrounder</td><td>A later flowin PR; the example is the v0.1.0 case study.</td></tr>
+<tr><td>URL / persisted knob state</td><td>No v0.1.0 requirement; knobs stay plain widgets.</td></tr>
+<tr><td><code>dart pub publish</code></td><td>Requires separate explicit approval. The plan ends at "validated, committed locally, not published."</td></tr>
+</table>
+
+<h2>File map (end state of <code>lib/</code>)</h2>
+<div class="file-tree">lib/
+  playgrounder.dart            (barrel — 13 exports)
+  src/
+    _tokens.dart               gap / inset / hairline
+    playground/
+      playground.dart          Playground&lt;T&gt;
+      playground_preset.dart    PlaygroundPreset&lt;T&gt;
+      playground_action.dart    PlaygroundAction
+      preview/playground_preview.dart      (private)
+      inspector/playground_inspector.dart  (private)
+      inspector/playground_presets.dart    (private)
+      inspector/playground_actions.dart    (private)
+    knobs/
+      step_knob.dart            StepKnob&lt;T&gt;
+      switch_knob.dart          SwitchKnob
+      scale_knob.dart           ScaleKnob + ScaleStep
+      knob_group.dart           KnobGroup
+      knob_relevance.dart       KnobRelevance
+    style/
+      playground_style.dart     PlaygroundStyle + PlaygroundStyleScope</div>
+
+<h2>Effort shape</h2>
+<p>Seven steps, ~18 source files, most transformed from ~584 LOC of existing flowin playground code rather than written cold. The genuinely new code is small: <code>PlaygroundStyle</code> + Scope, <code>ScaleStep</code>/<code>ScaleKnob</code>, and the presetless-inspector regression test. The rest is mechanical rename + de-flowin + route-through-style, preserving flowin's doc comments and reasoning.</p>
+
+</div>

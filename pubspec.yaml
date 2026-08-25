@@ -1,0 +1,26 @@
+name: playgrounder
+description: "An opinionated playground builder for Flutter components: live preview, presets, and knobs."
+version: 0.1.0
+repository: https://github.com/luisburgos/playgrounder
+
+# Max 5, lowercase alphanumeric or hyphens, 2-32 chars each.
+topics:
+  - playground
+  - preview
+  - knobs
+  - design
+  - widgets
+
+environment:
+  sdk: ^3.11.0
+  flutter: ">=3.41.0"
+
+dependencies:
+  equatable: ^2.0.7
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.2.0
