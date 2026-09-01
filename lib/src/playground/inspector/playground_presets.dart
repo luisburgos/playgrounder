@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
+import 'package:playgrounder/src/theme/playground_slots.dart';
 import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// The inspector's preset list.
@@ -34,7 +35,7 @@ class PlaygroundPresets<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chrome = PlaygroundTheme.of(context).chromeBuilder;
+    final build = PlaygroundTheme.of(context).resolvedPresetRowBuilder;
     final theme = Theme.of(context);
 
     return Column(
@@ -42,11 +43,13 @@ class PlaygroundPresets<T> extends StatelessWidget {
       spacing: gap,
       children: [
         for (final preset in presets)
-          chrome.buildPresetRow(
+          build(
             context,
-            label: preset.label,
-            selected: preset == active,
-            onPressed: () => onSelected(preset.config),
+            PlaygroundPresetRowDetails(
+              label: preset.label,
+              selected: preset == active,
+              onPressed: () => onSelected(preset.config),
+            ),
           ),
         Text(
           active?.summary ?? 'Custom — the knobs no longer match a preset.',

@@ -24,12 +24,21 @@ rules below are the hard gates an agent must not cross on its own judgment.
 
 ## API invariants
 
-- `PlaygroundChromeBuilder` is the single seam through which a consuming design
-  system dresses the playground, and it is carried in `PlaygroundThemeData`
-  rather than injected in its own right — the shape Flutter uses for a
-  behavioral seam (`PageTransitionsBuilder` inside `PageTransitionsTheme`). New
-  chrome a consumer might substitute becomes another builder method, never a
-  hardcoded widget in the private inspector.
+- Chrome a consuming design system substitutes is exposed as **one nullable
+  builder per slot** on `PlaygroundThemeData` (`tabsBuilder`,
+  `presetRowBuilder`, `actionButtonBuilder`), each taking a `*Details` object.
+  Null means the Material default. New chrome becomes another nullable field,
+  never a method on a shared interface: a field is additive for every existing
+  consumer, a method is a breaking change to all of them. This is the shape
+  Flutter uses for independent slots (`Stepper.controlsBuilder` /
+  `stepIconBuilder`).
+- **No field on `PlaygroundThemeData` may duplicate what `ThemeData` already
+  themes.** The default chrome is stock Material, so a consumer's `ColorScheme`
+  and component themes reach it for free. A color or text style here would be a
+  second source of truth: meaningless to a builder returning a non-Material
+  widget, ambiguous against `Theme.of(context)` for one that returns a Material
+  widget. Only what Material cannot express — the stage tint, the split
+  proportions — belongs here.
 - `PlaygroundThemeData` must keep exact `==`/`hashCode` over every field,
   including `chromeBuilder`. `PlaygroundTheme.updateShouldNotify` compares two
   of them, so a field left out of equality silently stops propagating.

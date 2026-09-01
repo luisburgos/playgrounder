@@ -14,7 +14,7 @@ Future<void> _pumpAt(
   int config = 0,
   ValueChanged<int>? onChanged,
   Widget? footer,
-  PlaygroundChromeBuilder? chrome,
+  PlaygroundActionButtonBuilder? actionButtonBuilder,
 }) {
   Widget playground = Playground<int>(
     config: config,
@@ -27,9 +27,9 @@ Future<void> _pumpAt(
       child: const Text('bump'),
     ),
   );
-  if (chrome != null) {
+  if (actionButtonBuilder != null) {
     playground = PlaygroundTheme(
-      data: PlaygroundThemeData(chromeBuilder: chrome),
+      data: PlaygroundThemeData(actionButtonBuilder: actionButtonBuilder),
       child: playground,
     );
   }
@@ -48,21 +48,14 @@ Future<void> _pumpAt(
   );
 }
 
-class _RedActionChrome extends MaterialPlaygroundChromeBuilder {
-  const _RedActionChrome();
-
-  @override
-  Widget buildActionButton(
-    BuildContext context, {
-    required String label,
-    required VoidCallback onPressed,
-    Widget? icon,
-  }) {
-    return TextButton(
-      onPressed: onPressed,
-      child: Text('styled $label'),
-    );
-  }
+Widget _redActionButton(
+  BuildContext context,
+  PlaygroundActionDetails details,
+) {
+  return TextButton(
+    onPressed: details.onPressed,
+    child: Text('styled ${details.label}'),
+  );
 }
 
 void main() {
@@ -221,7 +214,7 @@ void main() {
         footer: PlaygroundActions(
           actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
         ),
-        chrome: const _RedActionChrome(),
+        actionButtonBuilder: _redActionButton,
       );
 
       expect(find.text('styled Copy'), findsOneWidget);

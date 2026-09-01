@@ -6,21 +6,31 @@
 adapted onto the new seam, so existing code runs unchanged. Both are removed in
 0.4.0.
 
-Migrate by implementing a `PlaygroundChromeBuilder` and providing it as theme
-data:
+Migrate by setting one builder per slot you actually overrode:
 
 ```dart
 // before
-class MyStyle extends PlaygroundStyle { /* overrides */ }
+class MyStyle extends PlaygroundStyle {
+  @override
+  Widget buildActionButton(BuildContext context, {...}) => MyButton(...);
+}
 PlaygroundStyleScope(style: const MyStyle(), child: child)
 
 // after
-class MyChrome extends MaterialPlaygroundChromeBuilder { /* overrides */ }
+Widget myActionButton(BuildContext c, PlaygroundActionDetails d) =>
+    MyButton(label: d.label, icon: d.icon, onPressed: d.onPressed);
+
 PlaygroundTheme(
-  data: const PlaygroundThemeData(chromeBuilder: MyChrome()),
+  data: const PlaygroundThemeData(actionButtonBuilder: myActionButton),
   child: child,
 )
 ```
+
+The slots are `tabsBuilder`, `presetRowBuilder` and `actionButtonBuilder`; null
+means the Material default, so overriding one leaves the others alone and no
+subclassing is needed. Hoist builders to top-level or static functions —
+function equality is by identity, so an inline closure makes a new theme every
+build.
 
 `stageBackground` was a method resolving a colour from a context; it is now a
 nullable `Color` field on `PlaygroundThemeData`, since the right stage tint is

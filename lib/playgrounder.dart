@@ -13,5 +13,5 @@ export 'src/playground/playground.dart';
 export 'src/playground/playground_action.dart';
 export 'src/playground/playground_preset.dart';
 export 'src/style/playground_style.dart';
-export 'src/theme/playground_chrome_builder.dart';
+export 'src/theme/playground_slots.dart';
 export 'src/theme/playground_theme.dart';
