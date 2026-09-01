@@ -1,9 +1,12 @@
 // This file is the deprecated compatibility layer for the 0.2.0 seam. Every
 // element in it is deprecated on purpose and cross-references its neighbours,
-// so the same three diagnostics fire throughout; they are silenced once here
-// rather than at each of a dozen sites.
+// so the same diagnostics fire throughout; they are silenced once here rather
+// than at each of a dozen sites.
 //
-// ignore_for_file: remove_deprecations_in_breaking_versions
+// remove_deprecations_in_breaking_versions is NOT ignored here: it only fires
+// on a breaking bump, where it is the reminder that this whole file should go.
+// That is 0.4.0.
+//
 // ignore_for_file: deprecated_member_use_from_same_package
 // ignore_for_file: deprecated_consistency
 import 'package:flutter/material.dart';
