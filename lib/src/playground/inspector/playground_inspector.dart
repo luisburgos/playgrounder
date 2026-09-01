@@ -44,6 +44,13 @@ class PlaygroundInspector<T> extends StatefulWidget {
   ///
   /// True when docked beside the preview, false when stacked below it — there
   /// the two meet on the other axis and a horizontal divider does that job.
+  ///
+  /// This is container knowledge leaking into content: the inspector has to
+  /// know which layout encloses it in order to draw its own edge. That is
+  /// tolerable while there are two layouts, but a third — the planned mobile
+  /// FAB opening the controls in a sheet — would make it a three-way flag on a
+  /// widget that should not care. The edge belongs to whatever contains the
+  /// inspector. See issue #8.
   final bool bordered;
 
   @override
