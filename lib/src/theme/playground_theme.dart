@@ -30,9 +30,12 @@ const double kPlaygroundInspectorWidth = 300;
 ///
 /// Value semantics are a requirement, not a convenience — [PlaygroundTheme]
 /// decides whether to rebuild its dependents by comparing two of these.
-/// Function fields compare by identity, so hoist builders to static or
-/// top-level functions rather than writing closures inline; an inline closure
-/// makes a new theme every build and needlessly rebuilds the chrome.
+/// Function fields compare by identity, so hoist the builders to static or
+/// top-level functions. That is specific to builders held in a value object
+/// that is compared: a builder passed straight to a widget is never compared,
+/// which is why an inline closure is normal there and not here. Flutter's
+/// `ActionIconThemeData` carries nullable slot builders in its equality the
+/// same way.
 @immutable
 class PlaygroundThemeData {
   /// Creates a theme. Every value defaults to the stock Material playground.

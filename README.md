@@ -31,7 +31,7 @@ Or add it to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  playgrounder: ^0.3.0
+  playgrounder: ^0.3.1
 ```
 
 ## Usage 🚀
@@ -101,9 +101,13 @@ The three slots are `tabsBuilder`, `presetRowBuilder` and
 `actionButtonBuilder`. Null means the Material default, so overriding one
 leaves the others alone.
 
-> Hoist builders to top-level or static functions rather than writing closures
-> inline. Function equality is by identity, so an inline closure makes a new
-> theme on every build and rebuilds the chrome for nothing.
+> Hoist *these* builders to top-level or static functions. Unlike a builder
+> passed straight to a widget — where an inline closure is normal and costs
+> nothing — a builder stored on a theme is compared by identity, because
+> `PlaygroundTheme` decides whether to rebuild by comparing two
+> `PlaygroundThemeData`. An inline closure makes the theme unequal on every
+> build, so the chrome rebuilds for nothing. Flutter's own
+> `ActionIconThemeData` carries slot builders the same way.
 
 **4. The package theme carries only what Material cannot express.**
 `stageBackground`, `inspectorWidth`, `splitBreakpoint` — the tint behind a

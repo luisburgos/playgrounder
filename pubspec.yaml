@@ -1,6 +1,6 @@
 name: playgrounder
 description: "An opinionated playground builder for Flutter components: live preview, presets, and knobs."
-version: 0.3.0
+version: 0.3.1
 repository: https://github.com/luisburgos/playgrounder
 
 # Max 5, lowercase alphanumeric or hyphens, 2-32 chars each.
