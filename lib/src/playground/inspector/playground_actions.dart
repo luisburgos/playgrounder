@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/playground_action.dart';
-import 'package:playgrounder/src/style/playground_style.dart';
+import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// A column of styled action buttons, ready to pin in a playground's footer.
 ///
 /// The prefab content for the common footer: each [PlaygroundAction] renders
-/// through the ambient [PlaygroundStyle]'s `buildActionButton`, so a design
+/// through the ambient `PlaygroundChromeBuilder`'s `buildActionButton`, so a
+/// design
 /// system's own button appears here rather than stock Material.
 ///
 /// This is content, not the region: the footer slot it goes into supplies the
@@ -29,14 +30,14 @@ class PlaygroundActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = PlaygroundStyleScope.of(context);
+    final chrome = PlaygroundTheme.of(context).chromeBuilder;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       spacing: gap,
       children: [
         for (final action in actions)
-          style.buildActionButton(
+          chrome.buildActionButton(
             context,
             label: action.label,
             onPressed: action.onPressed,

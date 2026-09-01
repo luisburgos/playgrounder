@@ -3,13 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:playgrounder/playgrounder.dart';
 import 'package:playgrounder/src/playground/preview/playground_preview.dart';
 
-/// A style with a distinctive stage color, to prove the preview reads it.
-class _RedStageStyle extends PlaygroundStyle {
-  const _RedStageStyle();
-
-  @override
-  Color stageBackground(BuildContext context) => const Color(0xFFFF0000);
-}
+/// A theme with a distinctive stage color, to prove the preview reads it.
+const _redStage = PlaygroundThemeData(stageBackground: Color(0xFFFF0000));
 
 Color _stageColorOf(WidgetTester tester) {
   final box = tester.widget<DecoratedBox>(
@@ -25,13 +20,13 @@ Color _stageColorOf(WidgetTester tester) {
 
 void main() {
   group('PlaygroundPreview', () {
-    testWidgets('uses the ambient style stage background by default', (
+    testWidgets('uses the ambient stage background by default', (
       tester,
     ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: PlaygroundStyleScope(
-            style: _RedStageStyle(),
+          home: PlaygroundTheme(
+            data: _redStage,
             child: PlaygroundPreview(child: Text('subject')),
           ),
         ),
@@ -41,11 +36,11 @@ void main() {
       expect(find.text('subject'), findsOneWidget);
     });
 
-    testWidgets('a per-call background wins over the style', (tester) async {
+    testWidgets('a per-call background wins over the theme', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: PlaygroundStyleScope(
-            style: _RedStageStyle(),
+          home: PlaygroundTheme(
+            data: _redStage,
             child: PlaygroundPreview(
               background: Color(0xFF00FF00),
               child: Text('subject'),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
-import 'package:playgrounder/src/style/playground_style.dart';
+import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// The inspector's preset list.
 ///
@@ -10,7 +10,8 @@ import 'package:playgrounder/src/style/playground_style.dart';
 /// match any preset the list reports that the configuration is custom, which
 /// is why [active] is nullable rather than an index.
 ///
-/// Each row is built by the ambient [PlaygroundStyle], so a design system's
+/// Each row is built by the ambient `PlaygroundChromeBuilder`, so a design
+/// system's
 /// own button appears here rather than stock Material.
 class PlaygroundPresets<T> extends StatelessWidget {
   /// Creates a preset list.
@@ -33,7 +34,7 @@ class PlaygroundPresets<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = PlaygroundStyleScope.of(context);
+    final chrome = PlaygroundTheme.of(context).chromeBuilder;
     final theme = Theme.of(context);
 
     return Column(
@@ -41,7 +42,7 @@ class PlaygroundPresets<T> extends StatelessWidget {
       spacing: gap,
       children: [
         for (final preset in presets)
-          style.buildPresetRow(
+          chrome.buildPresetRow(
             context,
             label: preset.label,
             selected: preset == active,

@@ -7,14 +7,14 @@ const List<PlaygroundPreset<int>> _presets = [
   PlaygroundPreset(label: 'Compact', config: 1),
 ];
 
-/// Pumps a playground at a fixed pane width, with an optional style scope.
+/// Pumps a playground at a fixed pane width, with an optional theme.
 Future<void> _pumpAt(
   WidgetTester tester,
   double width, {
   int config = 0,
   ValueChanged<int>? onChanged,
   Widget? footer,
-  PlaygroundStyle? style,
+  PlaygroundChromeBuilder? chrome,
 }) {
   Widget playground = Playground<int>(
     config: config,
@@ -27,8 +27,11 @@ Future<void> _pumpAt(
       child: const Text('bump'),
     ),
   );
-  if (style != null) {
-    playground = PlaygroundStyleScope(style: style, child: playground);
+  if (chrome != null) {
+    playground = PlaygroundTheme(
+      data: PlaygroundThemeData(chromeBuilder: chrome),
+      child: playground,
+    );
   }
 
   // The default test viewport is 800px wide, which would clamp a 1000px pane
@@ -45,8 +48,8 @@ Future<void> _pumpAt(
   );
 }
 
-class _RedActionStyle extends PlaygroundStyle {
-  const _RedActionStyle();
+class _RedActionChrome extends MaterialPlaygroundChromeBuilder {
+  const _RedActionChrome();
 
   @override
   Widget buildActionButton(
@@ -198,7 +201,7 @@ void main() {
   });
 
   group('Playground styling', () {
-    testWidgets('uses stock Material chrome with no scope', (tester) async {
+    testWidgets('uses stock Material chrome with no theme', (tester) async {
       await _pumpAt(
         tester,
         1000,
@@ -211,14 +214,14 @@ void main() {
       expect(find.text('styled Copy'), findsNothing);
     });
 
-    testWidgets('uses the injected style when scoped', (tester) async {
+    testWidgets('uses the injected chrome when themed', (tester) async {
       await _pumpAt(
         tester,
         1000,
         footer: PlaygroundActions(
           actions: [PlaygroundAction(label: 'Copy', onPressed: () {})],
         ),
-        style: const _RedActionStyle(),
+        chrome: const _RedActionChrome(),
       );
 
       expect(find.text('styled Copy'), findsOneWidget);

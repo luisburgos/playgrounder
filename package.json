@@ -1,6 +1,6 @@
 {
   "name": "playgrounder",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "changelog": "conventional-changelog -n ./.changelogrc.js -i CHANGELOG.md -s"

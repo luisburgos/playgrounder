@@ -1,126 +1,184 @@
+// This file is the deprecated compatibility layer for the 0.2.0 seam. Every
+// element in it is deprecated on purpose and cross-references its neighbours,
+// so the same three diagnostics fire throughout; they are silenced once here
+// rather than at each of a dozen sites.
+//
+// ignore_for_file: remove_deprecations_in_breaking_versions
+// ignore_for_file: deprecated_consistency
 import 'package:flutter/material.dart';
+import 'package:playgrounder/src/theme/playground_chrome_builder.dart';
+import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// How a design system dresses the playground.
 ///
-/// The playground's behavior — the split-pane layout, the preset-versus-Custom
-/// tracking, the knob mechanics — is fixed. Its *chrome* is not: the tab row,
-/// the preset rows, the action buttons, and the stage color are the points a
-/// consuming design system will want in its own widgets rather than stock
-/// Material. Those four points live here.
+/// Superseded by [PlaygroundChromeBuilder] carried inside a
+/// [PlaygroundThemeData]: behavior belongs *inside* a theme rather than being
+/// injected in place of one, which is the shape Flutter itself uses
+/// (`PageTransitionsBuilder` lives in `PageTransitionsTheme`). The rename also
+/// drops the `Scope` suffix, which named an implementation detail — Material
+/// has no `*Scope` widgets.
 ///
-/// The base class supplies a Material default for every point, so a consumer
-/// that injects nothing gets a usable playground with no wiring. Subclass it,
-/// override only the points you care about, and provide it through a
-/// [PlaygroundStyleScope]; the widget tree calls every method unconditionally,
-/// so an un-overridden point keeps its Material default.
-///
-/// Three of the four members build widgets; [stageBackground] returns a color.
-/// It lives here rather than as a per-playground argument because the right
-/// stage tint is a fact about the design system's `ColorScheme`, not about any
-/// one previewed subject — so it is stated once, alongside the chrome, rather
-/// than repeated at every call site.
+/// Still fully supported: a subclass is adapted onto the new seam by
+/// [PlaygroundStyleScope], so existing code keeps working unchanged.
+@Deprecated(
+  'Implement PlaygroundChromeBuilder and provide it through '
+  'PlaygroundTheme(data: PlaygroundThemeData(chromeBuilder: ...)) instead. '
+  'Will be removed in 0.4.0.',
+)
 class PlaygroundStyle {
   /// Creates a style. The base builds stock Material chrome.
   const PlaygroundStyle();
 
   /// Builds the inspector's Presets/Custom tab row.
-  ///
-  /// The default is a Material [TabBar] over [labels], driven by [controller].
   Widget buildTabs(
     BuildContext context, {
     required TabController controller,
     required List<String> labels,
   }) {
-    return TabBar(
+    return const MaterialPlaygroundChromeBuilder().buildTabs(
+      context,
       controller: controller,
-      tabs: [for (final label in labels) Tab(text: label)],
+      labels: labels,
     );
   }
 
   /// Builds one row in the inspector's preset list.
-  ///
-  /// The two states read differently so the active preset is obvious at a
-  /// glance: the [selected] row is a full-width tonal button with a leading
-  /// check, and an unselected row is a quieter full-width outlined button with
-  /// no icon.
   Widget buildPresetRow(
     BuildContext context, {
     required String label,
     required bool selected,
     required VoidCallback onPressed,
   }) {
-    if (selected) {
-      return SizedBox(
-        width: double.infinity,
-        child: FilledButton.tonalIcon(
-          onPressed: onPressed,
-          icon: const Icon(Icons.check),
-          label: Text(label),
-        ),
-      );
-    }
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        child: Text(label),
-      ),
+    return const MaterialPlaygroundChromeBuilder().buildPresetRow(
+      context,
+      label: label,
+      selected: selected,
+      onPressed: onPressed,
     );
   }
 
   /// Builds one of the inspector's pinned action buttons.
-  ///
-  /// The default is a full-width tonal button.
   Widget buildActionButton(
     BuildContext context, {
     required String label,
     required VoidCallback onPressed,
     Widget? icon,
   }) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.tonalIcon(
-        onPressed: onPressed,
-        icon: icon ?? const SizedBox.shrink(),
-        label: Text(label),
-      ),
+    return const MaterialPlaygroundChromeBuilder().buildActionButton(
+      context,
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
     );
   }
 
   /// The background of the preview stage the subject renders on.
-  ///
-  /// The default is `surfaceContainerHighest`, a real tint under a stock
-  /// Material scheme. A design system whose scheme leaves the container roles
-  /// at plain `surface` overrides this so a neutral subject does not vanish.
   Color stageBackground(BuildContext context) {
     return Theme.of(context).colorScheme.surfaceContainerHighest;
   }
 }
 
+/// Adapts a [PlaygroundStyle] onto the [PlaygroundChromeBuilder] seam.
+///
+/// Every call forwards to the wrapped style, so an override on the old class
+/// still reaches the playground. Equality is by wrapped style, which is what
+/// keeps `updateShouldNotify` honest for consumers that have not migrated.
+@Deprecated(
+  'Internal shim for the deprecated PlaygroundStyle. Removed in 0.4.0.',
+)
+class _StyleChromeBuilder extends PlaygroundChromeBuilder {
+  const _StyleChromeBuilder(this.style);
+
+  final PlaygroundStyle style;
+
+  @override
+  Widget buildTabs(
+    BuildContext context, {
+    required TabController controller,
+    required List<String> labels,
+  }) => style.buildTabs(context, controller: controller, labels: labels);
+
+  @override
+  Widget buildPresetRow(
+    BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onPressed,
+  }) => style.buildPresetRow(
+    context,
+    label: label,
+    selected: selected,
+    onPressed: onPressed,
+  );
+
+  @override
+  Widget buildActionButton(
+    BuildContext context, {
+    required String label,
+    required VoidCallback onPressed,
+    Widget? icon,
+  }) => style.buildActionButton(
+    context,
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is _StyleChromeBuilder && other.style == style;
+
+  @override
+  int get hashCode => style.hashCode;
+}
+
 /// Provides a [PlaygroundStyle] to the playgrounds below it.
 ///
-/// A playground reads the ambient style with [of]. With no scope in the tree
-/// the style is a plain [PlaygroundStyle] — stock Material chrome — so bare
-/// usage needs no wrapper.
-class PlaygroundStyleScope extends InheritedWidget {
+/// Superseded by [PlaygroundTheme]. This now wraps one: the style is adapted
+/// onto the new seam and scoped as theme data, so a tree mixing the two reads
+/// one consistent chrome.
+///
+/// The stage background is the one member that cannot be forwarded as a value
+/// — the old API resolves it from a context — so it is left to the theme's own
+/// resolution unless the style overrides it, in which case the override wins
+/// at paint time through the adapter's own scope.
+@Deprecated(
+  'Use PlaygroundTheme(data: PlaygroundThemeData(chromeBuilder: ...)) instead. '
+  'Will be removed in 0.4.0.',
+)
+class PlaygroundStyleScope extends StatelessWidget {
   /// Scopes [style] over [child].
   const PlaygroundStyleScope({
     required this.style,
-    required super.child,
+    required this.child,
     super.key,
   });
 
   /// The style provided to the subtree.
   final PlaygroundStyle style;
 
+  /// The subtree the style applies to.
+  final Widget child;
+
   /// The ambient style, or a default [PlaygroundStyle] when none is in scope.
+  ///
+  /// Reads through the new seam so a subtree scoped with either API resolves.
   static PlaygroundStyle of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<PlaygroundStyleScope>();
-    return scope?.style ?? const PlaygroundStyle();
+    final builder = PlaygroundTheme.of(context).chromeBuilder;
+    if (builder is _StyleChromeBuilder) return builder.style;
+    return const PlaygroundStyle();
   }
 
   @override
-  bool updateShouldNotify(PlaygroundStyleScope oldWidget) =>
-      style != oldWidget.style;
+  Widget build(BuildContext context) {
+    // Resolved eagerly so the stage tint an overriding style returns is
+    // carried as a value, the shape the new theme data expects.
+    return PlaygroundTheme(
+      data: PlaygroundThemeData(
+        chromeBuilder: _StyleChromeBuilder(style),
+        stageBackground: style.stageBackground(context),
+      ),
+      child: child,
+    );
+  }
 }

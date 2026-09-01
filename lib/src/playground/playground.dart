@@ -3,15 +3,7 @@ import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/inspector/playground_inspector.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
 import 'package:playgrounder/src/playground/preview/playground_preview.dart';
-
-/// Default width at which the playground splits into a preview and an
-/// inspector. Below this the two would each be too narrow to use, so they
-/// stack instead. Override with `Playground.splitBreakpoint`.
-const _defaultSplitBreakpoint = 900.0;
-
-/// Default width of the docked inspector. Override with
-/// `Playground.inspectorWidth`.
-const _defaultInspectorWidth = 300.0;
+import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// A component rendered live beside the controls that configure it.
 ///
@@ -26,8 +18,8 @@ const _defaultInspectorWidth = 300.0;
 ///
 /// The chrome — tabs, preset rows, action buttons, stage color — comes from
 /// the ambient `PlaygroundStyle`, so a design system dresses the playground in
-/// its own widgets by scoping a `PlaygroundStyleScope` above it. With no scope
-/// the chrome is stock Material.
+/// its own widgets by scoping a `PlaygroundTheme` above it. With no theme the
+/// chrome is stock Material.
 ///
 /// ```dart
 /// Playground<MyConfig>(
@@ -51,8 +43,8 @@ class Playground<T> extends StatelessWidget {
     this.footer,
     this.previewMaxWidth,
     this.previewBackground,
-    this.inspectorWidth = _defaultInspectorWidth,
-    this.splitBreakpoint = _defaultSplitBreakpoint,
+    this.inspectorWidth,
+    this.splitBreakpoint,
     super.key,
   });
 
@@ -93,18 +85,19 @@ class Playground<T> extends StatelessWidget {
   /// tint would swallow — a tonal or outlined control.
   final Color? previewBackground;
 
-  /// The width of the docked inspector, in logical pixels.
+  /// Overrides the theme's docked-inspector width, in logical pixels.
   ///
   /// Widen it for a component with wide knobs; the preview takes the remaining
   /// width. Applies only in the docked layout (see [splitBreakpoint]).
-  final double inspectorWidth;
+  final double? inspectorWidth;
 
-  /// The width at or above which the preview and inspector dock side by side.
+  /// Overrides the theme's split breakpoint.
   ///
-  /// Below it they stack, the preview over the inspector. Raise it if your
-  /// preview needs more room before an inspector fits beside it; lower it to
-  /// dock sooner.
-  final double splitBreakpoint;
+  /// At or above this width the preview and inspector dock side by side; below
+  /// it they stack, the preview over the inspector. Raise it if your preview
+  /// needs more room before an inspector fits beside it; lower it to dock
+  /// sooner.
+  final double? splitBreakpoint;
 
   /// The preset matching [config], or null once the knobs have moved away.
   PlaygroundPreset<T>? get _activePreset {
@@ -135,9 +128,13 @@ class Playground<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     // Measures the space the playground actually gets rather than the window,
     // so it still splits correctly inside a padded or inset parent.
+    final theme = PlaygroundTheme.of(context);
+    final effectiveSplit = splitBreakpoint ?? theme.splitBreakpoint;
+    final effectiveInspectorWidth = inspectorWidth ?? theme.inspectorWidth;
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < splitBreakpoint) {
+        if (constraints.maxWidth < effectiveSplit) {
           // Stacked, so the inspector's leading border would divide nothing —
           // a Divider does that job along the axis the two actually meet on.
           return ListView(
@@ -173,7 +170,7 @@ class Playground<T> extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: inspectorWidth,
+              width: effectiveInspectorWidth,
               child: _buildInspector(bordered: true),
             ),
           ],

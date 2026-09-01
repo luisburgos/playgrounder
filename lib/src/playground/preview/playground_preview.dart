@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
-import 'package:playgrounder/src/style/playground_style.dart';
+import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// The stage a playground's subject renders on.
 ///
-/// The background comes from the ambient [PlaygroundStyle] unless a per-call
+/// The background comes from the ambient `PlaygroundThemeData` unless a
+/// per-call
 /// [background] overrides it. A design system whose scheme leaves the container
 /// roles at plain `surface` sets its stage tint once on its style; a single
 /// neutral subject that the default tint would swallow — a tonal or outlined
@@ -33,7 +34,8 @@ class PlaygroundPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stage =
-        background ?? PlaygroundStyleScope.of(context).stageBackground(context);
+        background ??
+        PlaygroundTheme.of(context).resolveStageBackground(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(color: stage),

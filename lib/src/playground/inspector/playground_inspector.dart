@@ -3,7 +3,7 @@ import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/inspector/playground_footer.dart';
 import 'package:playgrounder/src/playground/inspector/playground_presets.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
-import 'package:playgrounder/src/style/playground_style.dart';
+import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// The docked region where a playground's subject is examined and adjusted.
 ///
@@ -85,12 +85,12 @@ class _PlaygroundInspectorState<T> extends State<PlaygroundInspector<T>>
       );
     }
 
-    final style = PlaygroundStyleScope.of(context);
+    final chrome = PlaygroundTheme.of(context).chromeBuilder;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        style.buildTabs(
+        chrome.buildTabs(
           context,
           controller: _tabs,
           labels: const ['Presets', 'Custom'],
