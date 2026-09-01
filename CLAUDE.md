@@ -24,9 +24,21 @@ rules below are the hard gates an agent must not cross on its own judgment.
 
 ## API invariants
 
-- `PlaygroundStyle` is the single seam through which a consuming design system
-  dresses the playground. New chrome that a consumer might want to substitute
-  belongs on `PlaygroundStyle`, not hardcoded into the private inspector.
+- `PlaygroundChromeBuilder` is the single seam through which a consuming design
+  system dresses the playground, and it is carried in `PlaygroundThemeData`
+  rather than injected in its own right — the shape Flutter uses for a
+  behavioral seam (`PageTransitionsBuilder` inside `PageTransitionsTheme`). New
+  chrome a consumer might substitute becomes another builder method, never a
+  hardcoded widget in the private inspector.
+- `PlaygroundThemeData` must keep exact `==`/`hashCode` over every field,
+  including `chromeBuilder`. `PlaygroundTheme.updateShouldNotify` compares two
+  of them, so a field left out of equality silently stops propagating.
+- Naming follows Material, not implementation: the widget is `PlaygroundTheme`
+  (never `*Scope`), its field is `data`, and `of(context)` returns the data.
+- `PlaygroundStyle` / `PlaygroundStyleScope` are the deprecated 0.2.x seam,
+  kept working by an adapter and **removed in 0.4.0**. Do not add anything to
+  them; the tests that exercise them are deliberate and must keep passing until
+  the removal.
 - The package depends on no design system and imports no Material component
   beyond raw primitives (`Slider`, `Switch`, `TabBar`, `Divider`,
   `FilledButton`) used as neutral scaffolding. A knob is scaffolding for

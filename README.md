@@ -4,7 +4,7 @@
 
 Build a playground for any component: a live preview beside the knobs that
 configure it, with presets to start from. It uses Material by default, or
-`PlaygroundStyle` to match your own design system.
+a `PlaygroundTheme` to match your own design system.
 
 ### 🔎 [**Try the live demo →**](https://luisburgos.github.io/playgrounder/)
 
@@ -18,7 +18,7 @@ The example playground, running in your browser. No install required.
   knob; the inspector shows when you've moved off a preset
 - **Ready-made knobs:** step, switch, scale, and dropdown, so you wire behavior
   not widgets
-- **Bring your own design system:** `PlaygroundStyle` restyles the tabs,
+- **Bring your own design system:** a `PlaygroundChromeBuilder` in the theme restyles the tabs,
   buttons, and stage; Material until you do
 
 ## Installation 💻
@@ -31,7 +31,7 @@ Or add it to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  playgrounder: ^0.2.0
+  playgrounder: ^0.3.0
 ```
 
 ## Usage 🚀
@@ -63,16 +63,17 @@ Playground<CardConfig>(
 )
 ```
 
-With no `PlaygroundStyle` in scope the chrome is plain Material.
+With no `PlaygroundTheme` in scope the chrome is plain Material.
 
 ### Bringing your own chrome
 
-Subclass `PlaygroundStyle`, override only the parts you want, and scope it over
-the subtree. Everything you leave alone keeps the Material default:
+Implement a `PlaygroundChromeBuilder`, put it in a `PlaygroundThemeData`, and
+scope it over the subtree. Extending `MaterialPlaygroundChromeBuilder` keeps the
+Material default for everything you leave alone:
 
 ```dart
-class MyStyle extends PlaygroundStyle {
-  const MyStyle();
+class MyChrome extends MaterialPlaygroundChromeBuilder {
+  const MyChrome();
 
   @override
   Widget buildActionButton(
@@ -84,11 +85,23 @@ class MyStyle extends PlaygroundStyle {
       MyButton(label: label, icon: icon, onPressed: onPressed);
 }
 
-PlaygroundStyleScope(
-  style: const MyStyle(),
+PlaygroundTheme(
+  data: const PlaygroundThemeData(
+    chromeBuilder: MyChrome(),
+    // The stage tint is a fact about your ColorScheme, so it is stated here
+    // rather than at every playground.
+    stageBackground: Color(0xFFEFEFEF),
+  ),
   child: Playground<CardConfig>(/* ... */),
 )
 ```
+
+> **Migrating from 0.2.x** — `PlaygroundStyle` and `PlaygroundStyleScope` still
+> work and are adapted onto the new seam, so existing code keeps running. They
+> are deprecated and will be removed in 0.4.0. The rename follows Material's own
+> convention: no `*Scope` widgets, and behavior carried *inside* a theme rather
+> than injected in place of one (`PageTransitionsBuilder` lives in
+> `PageTransitionsTheme`).
 
 ### Responsive layout
 
