@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:playgrounder/src/theme/playground_chrome_builder.dart';
+import 'package:playgrounder/src/theme/playground_slots.dart';
 
 /// The default width at which a playground splits into preview and inspector.
 ///
@@ -11,26 +11,48 @@ const double kPlaygroundInspectorWidth = 300;
 
 /// How a design system dresses the playground.
 ///
-/// Holds the [chromeBuilder] that draws the tabs, preset rows and action
-/// buttons, plus the layout values the playground splits and docks at. Stated
-/// once here rather than repeated at every playground: a design system's
-/// chrome and proportions are facts about the system, not about any one
-/// previewed subject.
+/// Holds one optional builder per chrome slot — the tab row, a preset row, an
+/// action button — plus the layout values the playground splits and docks at.
+/// Stated once here rather than repeated at every playground: a design
+/// system's chrome and proportions are facts about the system, not about any
+/// one previewed subject.
+///
+/// A null builder means the stock Material default, so overriding one slot
+/// leaves the rest alone and needs no subclassing.
+///
+/// **This type carries nothing that `ThemeData` already themes.** The default
+/// chrome is built from stock Material widgets, so a consumer's `ColorScheme`,
+/// `TabBarTheme` and button themes already reach it. A colour or text style
+/// here would be a second source of truth: meaningless to a builder returning
+/// a non-Material widget, and ambiguous against `Theme.of(context)` for one
+/// that returns a Material widget. Only what Material cannot express belongs
+/// here.
 ///
 /// Value semantics are a requirement, not a convenience — [PlaygroundTheme]
 /// decides whether to rebuild its dependents by comparing two of these.
+/// Function fields compare by identity, so hoist builders to static or
+/// top-level functions rather than writing closures inline; an inline closure
+/// makes a new theme every build and needlessly rebuilds the chrome.
 @immutable
 class PlaygroundThemeData {
   /// Creates a theme. Every value defaults to the stock Material playground.
   const PlaygroundThemeData({
-    this.chromeBuilder = const MaterialPlaygroundChromeBuilder(),
+    this.tabsBuilder,
+    this.presetRowBuilder,
+    this.actionButtonBuilder,
     this.stageBackground,
     this.inspectorWidth = kPlaygroundInspectorWidth,
     this.splitBreakpoint = kPlaygroundSplitBreakpoint,
   });
 
-  /// Draws the inspector's tabs, preset rows and action buttons.
-  final PlaygroundChromeBuilder chromeBuilder;
+  /// Builds the inspector's tab row, or null for the Material default.
+  final PlaygroundTabsBuilder? tabsBuilder;
+
+  /// Builds one preset row, or null for the Material default.
+  final PlaygroundPresetRowBuilder? presetRowBuilder;
+
+  /// Builds one pinned action button, or null for the Material default.
+  final PlaygroundActionButtonBuilder? actionButtonBuilder;
 
   /// The background of the preview stage the subject renders on.
   ///
@@ -59,19 +81,35 @@ class PlaygroundThemeData {
   Color resolveStageBackground(BuildContext context) =>
       stageBackground ?? Theme.of(context).colorScheme.surfaceContainerHighest;
 
+  /// The tab-row builder to use, falling back to the Material default.
+  PlaygroundTabsBuilder get resolvedTabsBuilder =>
+      tabsBuilder ?? buildMaterialTabs;
+
+  /// The preset-row builder to use, falling back to the Material default.
+  PlaygroundPresetRowBuilder get resolvedPresetRowBuilder =>
+      presetRowBuilder ?? buildMaterialPresetRow;
+
+  /// The action-button builder to use, falling back to the Material default.
+  PlaygroundActionButtonBuilder get resolvedActionButtonBuilder =>
+      actionButtonBuilder ?? buildMaterialActionButton;
+
   /// A copy with the given values replaced.
   ///
   /// Passing null for [stageBackground] keeps the current value; use
   /// `PlaygroundThemeData(...)` directly to clear it back to the scheme
   /// default.
   PlaygroundThemeData copyWith({
-    PlaygroundChromeBuilder? chromeBuilder,
+    PlaygroundTabsBuilder? tabsBuilder,
+    PlaygroundPresetRowBuilder? presetRowBuilder,
+    PlaygroundActionButtonBuilder? actionButtonBuilder,
     Color? stageBackground,
     double? inspectorWidth,
     double? splitBreakpoint,
   }) {
     return PlaygroundThemeData(
-      chromeBuilder: chromeBuilder ?? this.chromeBuilder,
+      tabsBuilder: tabsBuilder ?? this.tabsBuilder,
+      presetRowBuilder: presetRowBuilder ?? this.presetRowBuilder,
+      actionButtonBuilder: actionButtonBuilder ?? this.actionButtonBuilder,
       stageBackground: stageBackground ?? this.stageBackground,
       inspectorWidth: inspectorWidth ?? this.inspectorWidth,
       splitBreakpoint: splitBreakpoint ?? this.splitBreakpoint,
@@ -81,14 +119,15 @@ class PlaygroundThemeData {
   @override
   bool operator ==(Object other) =>
       other is PlaygroundThemeData &&
-      other.chromeBuilder == chromeBuilder &&
+      other.tabsBuilder == tabsBuilder &&
+      other.presetRowBuilder == presetRowBuilder &&
+      other.actionButtonBuilder == actionButtonBuilder &&
       other.stageBackground == stageBackground &&
       other.inspectorWidth == inspectorWidth &&
       other.splitBreakpoint == splitBreakpoint;
 
   @override
   int get hashCode => Object.hash(
-    chromeBuilder,
     stageBackground,
     inspectorWidth,
     splitBreakpoint,

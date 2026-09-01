@@ -18,7 +18,7 @@ The example playground, running in your browser. No install required.
   knob; the inspector shows when you've moved off a preset
 - **Ready-made knobs:** step, switch, scale, and dropdown, so you wire behavior
   not widgets
-- **Bring your own design system:** a `PlaygroundChromeBuilder` in the theme restyles the tabs,
+- **Bring your own design system:** per-slot builders restyle the tabs,
   buttons, and stage; Material until you do
 
 ## Installation 💻
@@ -65,43 +65,56 @@ Playground<CardConfig>(
 
 With no `PlaygroundTheme` in scope the chrome is plain Material.
 
-### Bringing your own chrome
+### Customization, in four steps
 
-Implement a `PlaygroundChromeBuilder`, put it in a `PlaygroundThemeData`, and
-scope it over the subtree. Extending `MaterialPlaygroundChromeBuilder` keeps the
-Material default for everything you leave alone:
+Take only the step you need. Most playgrounds stop at the second.
+
+**1. Zero-config gets you a real playground.** Add the dependency, write a
+config type and a `previewBuilder`, and you have a working preview and
+inspector. No theme, no builders, no subclassing.
+
+**2. Ambient theming carries you further than expected.** The defaults are
+built from stock Material widgets, so your app's `ColorScheme`, `TabBarTheme`
+and button themes already reach them. Most reskinning needs nothing from
+playgrounder at all.
+
+**3. Builders are the escape hatch, per slot.** When you need a *different
+widget* rather than a differently-styled one — your design system's button, a
+Cupertino control, anything foreign — replace exactly that slot and leave the
+rest on their Material defaults:
 
 ```dart
-class MyChrome extends MaterialPlaygroundChromeBuilder {
-  const MyChrome();
-
-  @override
-  Widget buildActionButton(
-    BuildContext context, {
-    required String label,
-    Widget? icon,
-    required VoidCallback onPressed,
-  }) =>
-      MyButton(label: label, icon: icon, onPressed: onPressed);
-}
+Widget myActionButton(BuildContext context, PlaygroundActionDetails details) =>
+    MyButton(
+      label: details.label,
+      icon: details.icon,
+      onPressed: details.onPressed,
+    );
 
 PlaygroundTheme(
-  data: const PlaygroundThemeData(
-    chromeBuilder: MyChrome(),
-    // The stage tint is a fact about your ColorScheme, so it is stated here
-    // rather than at every playground.
-    stageBackground: Color(0xFFEFEFEF),
-  ),
+  data: const PlaygroundThemeData(actionButtonBuilder: myActionButton),
   child: Playground<CardConfig>(/* ... */),
 )
 ```
 
+The three slots are `tabsBuilder`, `presetRowBuilder` and
+`actionButtonBuilder`. Null means the Material default, so overriding one
+leaves the others alone.
+
+> Hoist builders to top-level or static functions rather than writing closures
+> inline. Function equality is by identity, so an inline closure makes a new
+> theme on every build and rebuilds the chrome for nothing.
+
+**4. The package theme carries only what Material cannot express.**
+`stageBackground`, `inspectorWidth`, `splitBreakpoint` — the tint behind a
+previewed component and the proportions of the split. Nothing that `ThemeData`
+already themes lives here, so there is never a second source of truth for a
+color.
+
 > **Migrating from 0.2.x** — `PlaygroundStyle` and `PlaygroundStyleScope` still
 > work and are adapted onto the new seam, so existing code keeps running. They
-> are deprecated and will be removed in 0.4.0. The rename follows Material's own
-> convention: no `*Scope` widgets, and behavior carried *inside* a theme rather
-> than injected in place of one (`PageTransitionsBuilder` lives in
-> `PageTransitionsTheme`).
+> are deprecated and will be removed in 0.4.0. Replace a subclass with one
+> builder per slot you actually overrode.
 
 ### Responsive layout
 

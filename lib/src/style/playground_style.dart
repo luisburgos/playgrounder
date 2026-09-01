@@ -4,26 +4,30 @@
 // rather than at each of a dozen sites.
 //
 // ignore_for_file: remove_deprecations_in_breaking_versions
+// ignore_for_file: deprecated_member_use_from_same_package
 // ignore_for_file: deprecated_consistency
 import 'package:flutter/material.dart';
-import 'package:playgrounder/src/theme/playground_chrome_builder.dart';
+import 'package:playgrounder/src/theme/playground_slots.dart';
 import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// How a design system dresses the playground.
 ///
-/// Superseded by [PlaygroundChromeBuilder] carried inside a
-/// [PlaygroundThemeData]: behavior belongs *inside* a theme rather than being
-/// injected in place of one, which is the shape Flutter itself uses
-/// (`PageTransitionsBuilder` lives in `PageTransitionsTheme`). The rename also
-/// drops the `Scope` suffix, which named an implementation detail — Material
-/// has no `*Scope` widgets.
+/// Superseded by the per-slot builders on [PlaygroundThemeData]. One class
+/// with three `buildX` methods forced a subclass for any override; one nullable
+/// builder per slot lets a closure replace exactly the slot you care about and
+/// leave the rest on their Material defaults. It is also the shape Flutter
+/// itself uses for independent slots — `Stepper.controlsBuilder` and
+/// `stepIconBuilder`, `SearchAnchor.viewBuilder` and `suggestionsBuilder`.
+///
+/// The rename also drops the `Scope` suffix, which named an implementation
+/// detail — Material has no `*Scope` widgets.
 ///
 /// Still fully supported: a subclass is adapted onto the new seam by
 /// [PlaygroundStyleScope], so existing code keeps working unchanged.
 @Deprecated(
-  'Implement PlaygroundChromeBuilder and provide it through '
-  'PlaygroundTheme(data: PlaygroundThemeData(chromeBuilder: ...)) instead. '
-  'Will be removed in 0.4.0.',
+  'Set the slot builders on PlaygroundThemeData instead — tabsBuilder, '
+  'presetRowBuilder, actionButtonBuilder — and provide it through '
+  'PlaygroundTheme. Will be removed in 0.4.0.',
 )
 class PlaygroundStyle {
   /// Creates a style. The base builds stock Material chrome.
@@ -35,10 +39,9 @@ class PlaygroundStyle {
     required TabController controller,
     required List<String> labels,
   }) {
-    return const MaterialPlaygroundChromeBuilder().buildTabs(
+    return buildMaterialTabs(
       context,
-      controller: controller,
-      labels: labels,
+      PlaygroundTabsDetails(controller: controller, labels: labels),
     );
   }
 
@@ -49,11 +52,13 @@ class PlaygroundStyle {
     required bool selected,
     required VoidCallback onPressed,
   }) {
-    return const MaterialPlaygroundChromeBuilder().buildPresetRow(
+    return buildMaterialPresetRow(
       context,
-      label: label,
-      selected: selected,
-      onPressed: onPressed,
+      PlaygroundPresetRowDetails(
+        label: label,
+        selected: selected,
+        onPressed: onPressed,
+      ),
     );
   }
 
@@ -64,11 +69,9 @@ class PlaygroundStyle {
     required VoidCallback onPressed,
     Widget? icon,
   }) {
-    return const MaterialPlaygroundChromeBuilder().buildActionButton(
+    return buildMaterialActionButton(
       context,
-      label: label,
-      onPressed: onPressed,
-      icon: icon,
+      PlaygroundActionDetails(label: label, onPressed: onPressed, icon: icon),
     );
   }
 
@@ -78,73 +81,19 @@ class PlaygroundStyle {
   }
 }
 
-/// Adapts a [PlaygroundStyle] onto the [PlaygroundChromeBuilder] seam.
-///
-/// Every call forwards to the wrapped style, so an override on the old class
-/// still reaches the playground. Equality is by wrapped style, which is what
-/// keeps `updateShouldNotify` honest for consumers that have not migrated.
-@Deprecated(
-  'Internal shim for the deprecated PlaygroundStyle. Removed in 0.4.0.',
-)
-class _StyleChromeBuilder extends PlaygroundChromeBuilder {
-  const _StyleChromeBuilder(this.style);
-
-  final PlaygroundStyle style;
-
-  @override
-  Widget buildTabs(
-    BuildContext context, {
-    required TabController controller,
-    required List<String> labels,
-  }) => style.buildTabs(context, controller: controller, labels: labels);
-
-  @override
-  Widget buildPresetRow(
-    BuildContext context, {
-    required String label,
-    required bool selected,
-    required VoidCallback onPressed,
-  }) => style.buildPresetRow(
-    context,
-    label: label,
-    selected: selected,
-    onPressed: onPressed,
-  );
-
-  @override
-  Widget buildActionButton(
-    BuildContext context, {
-    required String label,
-    required VoidCallback onPressed,
-    Widget? icon,
-  }) => style.buildActionButton(
-    context,
-    label: label,
-    onPressed: onPressed,
-    icon: icon,
-  );
-
-  @override
-  bool operator ==(Object other) =>
-      other is _StyleChromeBuilder && other.style == style;
-
-  @override
-  int get hashCode => style.hashCode;
-}
-
 /// Provides a [PlaygroundStyle] to the playgrounds below it.
 ///
 /// Superseded by [PlaygroundTheme]. This now wraps one: the style is adapted
 /// onto the new seam and scoped as theme data, so a tree mixing the two reads
 /// one consistent chrome.
 ///
-/// The stage background is the one member that cannot be forwarded as a value
-/// — the old API resolves it from a context — so it is left to the theme's own
-/// resolution unless the style overrides it, in which case the override wins
-/// at paint time through the adapter's own scope.
+/// Each of the style's build methods becomes one slot builder on the theme, so
+/// an override on the old class still reaches the playground. The stage
+/// background is resolved eagerly to a value, which is the shape the new theme
+/// data expects.
 @Deprecated(
-  'Use PlaygroundTheme(data: PlaygroundThemeData(chromeBuilder: ...)) instead. '
-  'Will be removed in 0.4.0.',
+  'Use PlaygroundTheme(data: PlaygroundThemeData(presetRowBuilder: ...)) and '
+  'its sibling slot builders instead. Will be removed in 0.4.0.',
 )
 class PlaygroundStyleScope extends StatelessWidget {
   /// Scopes [style] over [child].
@@ -160,25 +109,61 @@ class PlaygroundStyleScope extends StatelessWidget {
   /// The subtree the style applies to.
   final Widget child;
 
-  /// The ambient style, or a default [PlaygroundStyle] when none is in scope.
+  /// The style scoped by the nearest [PlaygroundStyleScope], or a default.
   ///
-  /// Reads through the new seam so a subtree scoped with either API resolves.
+  /// Only finds a style provided through this deprecated widget; a subtree
+  /// scoped with [PlaygroundTheme] resolves to the default, since a slot
+  /// builder cannot be turned back into a style.
   static PlaygroundStyle of(BuildContext context) {
-    final builder = PlaygroundTheme.of(context).chromeBuilder;
-    if (builder is _StyleChromeBuilder) return builder.style;
-    return const PlaygroundStyle();
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<_StyleScopeMarker>();
+    return scope?.style ?? const PlaygroundStyle();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Resolved eagerly so the stage tint an overriding style returns is
-    // carried as a value, the shape the new theme data expects.
-    return PlaygroundTheme(
-      data: PlaygroundThemeData(
-        chromeBuilder: _StyleChromeBuilder(style),
-        stageBackground: style.stageBackground(context),
+    final s = style;
+    return _StyleScopeMarker(
+      style: s,
+      child: PlaygroundTheme(
+        data: PlaygroundThemeData(
+          tabsBuilder: (context, d) => s.buildTabs(
+            context,
+            controller: d.controller,
+            labels: d.labels,
+          ),
+          presetRowBuilder: (context, d) => s.buildPresetRow(
+            context,
+            label: d.label,
+            selected: d.selected,
+            onPressed: d.onPressed,
+          ),
+          actionButtonBuilder: (context, d) => s.buildActionButton(
+            context,
+            label: d.label,
+            onPressed: d.onPressed,
+            icon: d.icon,
+          ),
+          // Resolved eagerly so the tint an overriding style returns is
+          // carried as a value, the shape the new theme data expects.
+          stageBackground: s.stageBackground(context),
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
+}
+
+/// Carries the wrapped style so [PlaygroundStyleScope.of] can return it.
+///
+/// The theme itself holds closures, which cannot be turned back into the style
+/// they close over, so the style is kept alongside them.
+class _StyleScopeMarker extends InheritedWidget {
+  const _StyleScopeMarker({required this.style, required super.child});
+
+  final PlaygroundStyle style;
+
+  @override
+  bool updateShouldNotify(_StyleScopeMarker oldWidget) =>
+      style != oldWidget.style;
 }

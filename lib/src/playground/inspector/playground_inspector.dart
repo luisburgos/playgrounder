@@ -3,6 +3,7 @@ import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/inspector/playground_footer.dart';
 import 'package:playgrounder/src/playground/inspector/playground_presets.dart';
 import 'package:playgrounder/src/playground/playground_preset.dart';
+import 'package:playgrounder/src/theme/playground_slots.dart';
 import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// The docked region where a playground's subject is examined and adjusted.
@@ -44,6 +45,13 @@ class PlaygroundInspector<T> extends StatefulWidget {
   ///
   /// True when docked beside the preview, false when stacked below it — there
   /// the two meet on the other axis and a horizontal divider does that job.
+  ///
+  /// This is container knowledge leaking into content: the inspector has to
+  /// know which layout encloses it in order to draw its own edge. That is
+  /// tolerable while there are two layouts, but a third — the planned mobile
+  /// FAB opening the controls in a sheet — would make it a three-way flag on a
+  /// widget that should not care. The edge belongs to whatever contains the
+  /// inspector. See issue #8.
   final bool bordered;
 
   @override
@@ -85,15 +93,17 @@ class _PlaygroundInspectorState<T> extends State<PlaygroundInspector<T>>
       );
     }
 
-    final chrome = PlaygroundTheme.of(context).chromeBuilder;
+    final theme = PlaygroundTheme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        chrome.buildTabs(
+        theme.resolvedTabsBuilder(
           context,
-          controller: _tabs,
-          labels: const ['Presets', 'Custom'],
+          PlaygroundTabsDetails(
+            controller: _tabs,
+            labels: const ['Presets', 'Custom'],
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(inset),

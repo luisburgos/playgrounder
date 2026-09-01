@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:playgrounder/src/_tokens.dart';
 import 'package:playgrounder/src/playground/playground_action.dart';
+import 'package:playgrounder/src/theme/playground_slots.dart';
 import 'package:playgrounder/src/theme/playground_theme.dart';
 
 /// A column of styled action buttons, ready to pin in a playground's footer.
@@ -30,18 +31,20 @@ class PlaygroundActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chrome = PlaygroundTheme.of(context).chromeBuilder;
+    final build = PlaygroundTheme.of(context).resolvedActionButtonBuilder;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       spacing: gap,
       children: [
         for (final action in actions)
-          chrome.buildActionButton(
+          build(
             context,
-            label: action.label,
-            onPressed: action.onPressed,
-            icon: action.icon,
+            PlaygroundActionDetails(
+              label: action.label,
+              onPressed: action.onPressed,
+              icon: action.icon,
+            ),
           ),
       ],
     );
