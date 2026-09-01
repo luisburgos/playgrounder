@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+Documentation only; no API change.
+
+Narrows the advice about hoisting builders. It read as a general rule, which
+is wrong: Flutter's own source passes inline closures to builder parameters
+roughly seven times as often as hoisted functions, and a builder handed
+straight to a widget is never compared. The advice is specific to builders held
+on `PlaygroundThemeData`, which `PlaygroundTheme` compares to decide whether to
+rebuild.
+
 ## [0.3.0](https://github.com/luisburgos/playgrounder/compare/0.2.0...0.3.0) (2026-09-01)
 
 **DEPRECATED**: `PlaygroundStyle` and `PlaygroundStyleScope` still work and are
@@ -28,9 +39,10 @@ PlaygroundTheme(
 
 The slots are `tabsBuilder`, `presetRowBuilder` and `actionButtonBuilder`; null
 means the Material default, so overriding one leaves the others alone and no
-subclassing is needed. Hoist builders to top-level or static functions —
-function equality is by identity, so an inline closure makes a new theme every
-build.
+subclassing is needed. Hoist these builders to top-level or static functions:
+a builder stored on a theme is compared by identity, so an inline closure makes
+the theme unequal on every build. (A builder passed straight to a widget is
+never compared, which is why inline closures are normal there.)
 
 `stageBackground` was a method resolving a colour from a context; it is now a
 nullable `Color` field on `PlaygroundThemeData`, since the right stage tint is
