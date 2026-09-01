@@ -71,7 +71,7 @@ jobs:
             --base-href /playgrounder/ \
             --no-tree-shake-icons
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: example/build/web
 
