@@ -19,14 +19,15 @@
   ],
   "useGitignore": true,
   "words": [
-    "Cupertino",
     "changelogrc",
+    "Cupertino",
     "fvm",
     "fvmrc",
     "lefthook",
     "lowframer",
     "luisburgos",
     "playgrounder",
+    "pubignore",
     "reskinning",
     "subclassing"
   ]
