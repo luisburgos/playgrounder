@@ -64,10 +64,16 @@ jobs:
       # Icon tree shaking is disabled because the playground renders Material
       # icons chosen at runtime, which the shaker cannot see and would
       # otherwise strip.
+      #
+      # Wasm emits both a dart2wasm/skwasm build and the dart2js/canvaskit one;
+      # the loader picks wasm where the browser supports WasmGC and falls back
+      # to JS elsewhere. Pages cannot send COOP/COEP headers, so skwasm runs
+      # single-threaded.
       - name: Build web
         run: |
           flutter build web \
             --release \
+            --wasm \
             --base-href /playgrounder/ \
             --no-tree-shake-icons
 
