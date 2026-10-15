@@ -16,7 +16,7 @@ environment:
   flutter: ">=3.41.0"
 
 dependencies:
-  equatable: ^2.0.7
+  equatable: ">=2.0.7 <4.0.0"
   flutter:
     sdk: flutter
 
